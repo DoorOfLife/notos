@@ -46,5 +46,6 @@ fn main() {
     println!("Delete_line? {:?}", args.delete_line);
     println!("Topic? {:?}", args.topic);
     println!("Value? {:?}", args.value);
+    println!("Edit? {:?}", args.edit);
     exit(0);
 }
