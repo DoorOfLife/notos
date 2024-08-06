@@ -16,6 +16,9 @@ struct Cli {
     #[arg(short = 'e', long = "edit", help = "Open the topic file in the default editor")]
     edit: bool,
 
+    #[arg(short = 'a', long = "dump-all", help = "Prints all data from all topics")]
+    dump_all: bool,
+
     topic: Option<String>,
 
     value: Vec<String>,
@@ -30,6 +33,8 @@ impl Cli {
                 return Some("If you wish to destroy a topic then do not add a note");
             } else if self.edit {
                 return Some("You can't use edit and destroy in the same call, choose one");
+            } else if self.dump_all {
+                return Some("Destroying a topic and dumping all data are mutually exclusive");
             }
         } else if self.delete_line {
             if self.topic.is_none() {
@@ -38,14 +43,22 @@ impl Cli {
             if self.value.is_empty() {
                 return Some("You need to specify a line to delete");
             }
+            if self.dump_all {
+                return Some("Either delete line or dump all data, not both");
+            }
         } else if self.edit {
             if self.topic.is_none() {
                 return Some("You need to specify a topic to edit");
+            } else if self.dump_all {
+                return Some("You must choose either to edit or dump all data");
+            }
+        } else if self.dump_all {
+            if self.topic.is_some() || !self.value.is_empty() {
+                return Some("If you wish to dump all data then do not provide any further arguments");
             }
         }
         return None;
     }
-
 }
 
 fn main() {
@@ -65,6 +78,7 @@ fn main() {
     println!("Topic? {:?}", args.topic);
     println!("Value? {:?}", args.value);
     println!("Edit? {:?}", args.edit);
+    println!("Dump all? {:?}", args.dump_all);
 
     // No args, print list of topics, return
     // Only topic arg, print it, return
@@ -72,6 +86,7 @@ fn main() {
     // edit flag -> open file in $EDITOR, return
     // destroy flag -> destroy topic
     // delete line flag -> delete line in topic
+    // dump-all flag
 
     exit(OK);
 }
