@@ -1,8 +1,19 @@
+use toml::Table;
+use std::fs::read_to_string;
 use std::process::exit;
 use clap::{Parser};
 
 const OK: i32 = 0;
 const VALIDATION_FAIL: i32 = 1;
+const ROOT_DIR_DEFAULT: &str = ".notos";
+const CONFIG_FILE_NAME: &str = "config";
+const NOTES_DIR_DEFAULT: &str = "notes";
+const LOG_FILE_DEFAULT: &str = ".log";
+
+const CONFIG_KEY_NOTES_DIR: &str = "notes_dir";
+const CONFIG_KEY_LOG_FILE: &str = "log_file";
+const CONFIG_KEY_LOG_ENABLED: &str = "log_enabled";
+
 
 #[derive(Parser)] // requires `derive` feature
 #[command(version, about, long_about = None)]
@@ -61,12 +72,55 @@ impl Cli {
     }
 }
 
+struct Config {
+    notes_dir: String,
+    log_file: String,
+    log_enabled: bool,
+}
+
+fn fetch_config() -> Config {
+    // Check if config file exists
+    let home_dir = dirs::home_dir().expect("Could not find any home directory using dirs");
+    let home_dir_str = home_dir.to_str().expect("Failed to convert dir to string");
+    let config_file_path = home_dir.join(CONFIG_FILE_NAME);
+
+    let mut config = Config {
+        notes_dir: home_dir_str.to_owned() + "/" + ROOT_DIR_DEFAULT + "/" + NOTES_DIR_DEFAULT,
+        log_file: home_dir_str.to_owned() + "/" + ROOT_DIR_DEFAULT + "/" + LOG_FILE_DEFAULT,
+        log_enabled: true,
+    };
+
+    if config_file_path.exists() {
+        // Load and read the file content
+        let config_str = read_to_string(&config_file_path);
+        match config_str {
+            Ok(str) => {
+                let parsed = str.parse::<Table>().expect("Failed to parse config file");
+                let notes_dir = parsed.get(CONFIG_KEY_NOTES_DIR);
+                let log_file = parsed.get(CONFIG_KEY_LOG_FILE);
+                let log_enabled = parsed.get(CONFIG_KEY_LOG_FILE);
+
+                if let Some(value) = notes_dir {
+                    config.notes_dir = value.as_str().unwrap().to_owned();
+                }
+
+                if let Some(value) = log_file {
+                    config.log_file = value.as_str().unwrap().to_owned();
+                }
+
+                if let Some(value) = log_enabled {
+                    config.log_enabled = value.as_bool().unwrap();
+                }
+
+            }
+            _ => {}
+        }
+    } 
+    return config;
+}
+
 fn main() {
-    // if .notos exists load config
-    // if $NOTOS_NOTES exists use this path
-    // otherwise use default path (/home/$user/.notos and equivalent on win)
-    // if $NOTOS_LOG exists use this path
-    // otherwise use default path (/home/$user/.notos.log ---||---)
+    let config = fetch_config();
     let args = Cli::parse();
     let error_msg = args.validate();
     if error_msg.is_some() {
@@ -79,6 +133,10 @@ fn main() {
     println!("Value? {:?}", args.value);
     println!("Edit? {:?}", args.edit);
     println!("Dump all? {:?}", args.dump_all);
+    println!("notes dir: {:?}", config.notes_dir);
+    println!("log file: {:?}", config.log_file);
+    println!("log enabled?: {:?}", config.log_enabled);
+
 
     // No args, print list of topics, return
     // Only topic arg, print it, return
