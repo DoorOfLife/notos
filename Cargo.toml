@@ -8,3 +8,5 @@ clap = { version = "4.5.13", features = ["derive"] }
 termcolor = "1.4.1"
 dirs = "5.0.1"
 toml = "0.8.19"
+log = "0.4.22"
+simplelog = "0.12.2"
